@@ -5,7 +5,11 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour {
 
     public float speed = 15.0f;
-    public float padding = 1.0f; 
+    public float padding = 1.0f;
+    public GameObject projectile;
+    public float projectileSpeed;
+    public float firingRate = 0.2f;
+    public float health = 250.0f;
 
 
     // Use this for initialization
@@ -19,6 +23,14 @@ public class PlayerController : MonoBehaviour {
 
     float xMin;
     float xMax;
+
+
+    void Fire()
+    {
+        Vector3 offset = new Vector3(0, 1, 0);
+        GameObject beam = Instantiate(projectile, transform.position + offset, Quaternion.identity) as GameObject;
+        beam.GetComponent<Rigidbody2D>().velocity = new Vector3(0, projectileSpeed, 0);
+    }
 
 	// Update is called once per frame
 	void Update () {
@@ -34,10 +46,32 @@ public class PlayerController : MonoBehaviour {
             transform.position += Vector3.right * speed * Time.deltaTime; // this is the same as the the code to move left only a bit more readable
         }
 
-        //restrict player to game space
+        if (Input.GetKeyDown(KeyCode.Space)) {
+            InvokeRepeating("Fire", 0.00001f,firingRate); //this calls a function written as a string in order to controll the fire rate
+        }
+        if (Input.GetKeyUp(KeyCode.Space)) // this cancels the invokation of the fire method on key up
+        {
+            CancelInvoke("Fire");
+        }
 
-        float newX = Mathf.Clamp(transform.position.x, xMin, xMax);
+            //restrict player to game space
+
+            float newX = Mathf.Clamp(transform.position.x, xMin, xMax);
         transform.position = new Vector3(newX, transform.position.y, transform.position.z);
        
+    }
+    void OnTriggerEnter2D(Collider2D collider)
+    {
+
+        Projectile missile = collider.gameObject.GetComponent<Projectile>();
+        if (missile)
+        {
+            health -= missile.GetDamage();
+            missile.Hit();
+            if (health <= 0)
+            {
+                Destroy(gameObject);
+            }
+        }
     }
 }
